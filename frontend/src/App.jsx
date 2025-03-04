@@ -1,35 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import { fetchMailingLists } from './clientApi.js';
+import Toggle from './Toggle.jsx';
+import mockMailingLists from './mockData.js';
+
 
 function App() {
-  const [count, setCount] = useState(0)
+	const [mailingLists, setMailingLists] = useState([]);
+	const [selectedLists, setSelectedLists] = useState({});
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+	useEffect(() => {
+		const loadLists = async () => {
+			const lists = await fetchMailingLists();
+			setMailingLists(lists);
+
+			// Initialize toggle state (unsubscribed by default, or populate from user data if you want)
+			const initialSelection = lists.reduce((acc, list) => {
+				acc[list.mailing_list_id] = false; // Assume not subscribed
+				return acc;
+			}, {});
+			setSelectedLists(initialSelection);
+		};
+
+		loadLists();
+	}, []);
+
+	const toggleList = (id) => {
+		setSelectedLists((prev) => ({
+			...prev,
+			[id]: !prev[id],
+		}));
+	};
+
+	const handleSubmit = () => {
+		console.log('Preferences being submitted:', selectedLists);
+		// This would call another clientApi function like `savePreferences()` to your proxy
+	};
+
+	return (
+		<div className='container mx-auto p-4'>
+			<h1 className='text-2xl font-bold mb-4'>
+				Manage Your Newsletter Preferences
+			</h1>
+
+			<div className='space-y-2'>
+				{mailingLists.map((list) => (
+					<Toggle
+						key={list.mailing_list_id}
+						label={list.name}
+						checked={selectedLists[list.mailing_list_id]}
+						onChange={() => toggleList(list.mailing_list_id)}
+					/>
+				))}
+			</div>
+
+			<button className='mt-4 btn btn-primary' onClick={handleSubmit}>
+				Save Preferences
+			</button>
+		</div>
+	);
 }
 
-export default App
+export default App;
