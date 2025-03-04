@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react';
-import { fetchMailingLists } from './clientApi.js';
 import Toggle from './Toggle.jsx';
 import mockMailingLists from './mockData.js';
-
 
 function App() {
 	const [mailingLists, setMailingLists] = useState([]);
 	const [selectedLists, setSelectedLists] = useState({});
 
 	useEffect(() => {
-		const loadLists = async () => {
-			const lists = await fetchMailingLists();
+		const loadLists = () => {
+			const lists = [...mockMailingLists].sort(
+				(a, b) => a.sortOrder - b.sortOrder
+			); // ✅ Always sorted
 			setMailingLists(lists);
 
-			// Initialize toggle state (unsubscribed by default, or populate from user data if you want)
 			const initialSelection = lists.reduce((acc, list) => {
-				acc[list.mailing_list_id] = false; // Assume not subscribed
+				acc[list.mailing_list_id] = false;
 				return acc;
 			}, {});
 			setSelectedLists(initialSelection);
@@ -33,29 +32,51 @@ function App() {
 
 	const handleSubmit = () => {
 		console.log('Preferences being submitted:', selectedLists);
-		// This would call another clientApi function like `savePreferences()` to your proxy
 	};
 
 	return (
-		<div className='container mx-auto p-4'>
-			<h1 className='text-2xl font-bold mb-4'>
-				Manage Your Newsletter Preferences
-			</h1>
+		<div className='min-h-screen bg-white text-gray-800 w-full flex justify-center'>
+			<div className='w-full max-w-6xl p-6'>
+				<h1 className='text-3xl font-bold mb-6'>
+					Manage Your Newsletter Preferences
+				</h1>
 
-			<div className='space-y-2'>
-				{mailingLists.map((list) => (
-					<Toggle
-						key={list.mailing_list_id}
-						label={list.name}
-						checked={selectedLists[list.mailing_list_id]}
-						onChange={() => toggleList(list.mailing_list_id)}
-					/>
-				))}
+				<p className='text-gray-600 mb-6'>
+					Select which newsletters you’d like to receive. Uncheck to
+					unsubscribe. You can update your preferences at any time.
+				</p>
+
+				<div className='space-y-4'>
+					{mailingLists.map((list) => (
+						<div
+							key={list.mailing_list_id}
+							className='w-full bg-gray-50 rounded-lg shadow-sm p-4 flex items-center justify-between'
+						>
+							<div className='pr-4'>
+								<p className='text-lg font-semibold'>{list.name}</p>
+								{list.description && (
+									<p className='text-gray-600 text-sm mt-1'>
+										{list.description}
+									</p>
+								)}
+							</div>
+							<Toggle
+								checked={selectedLists[list.mailing_list_id]}
+								onChange={() => toggleList(list.mailing_list_id)}
+							/>
+						</div>
+					))}
+				</div>
+
+				<div className='mt-8'>
+					<button
+						className='bg-brand hover:bg-brand/90 text-white font-medium py-2 px-6 rounded-md'
+						onClick={handleSubmit}
+					>
+						Save Preferences
+					</button>
+				</div>
 			</div>
-
-			<button className='mt-4 btn btn-primary' onClick={handleSubmit}>
-				Save Preferences
-			</button>
 		</div>
 	);
 }
