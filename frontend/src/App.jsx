@@ -1,81 +1,35 @@
 import { useEffect, useState } from 'react';
 import Toggle from './Toggle.jsx';
-import { fetchMailingLists } from './clientApi.js'; // ✅ Correct import from your actual file
+import { fetchMailingLists } from './clientApi.js';
+import mailingListMetadata from './mailingListMetadata.js';
 
 function App() {
 	const [mailingLists, setMailingLists] = useState([]);
 	const [selectedLists, setSelectedLists] = useState({});
+
+	// New fields for user details
+	const [firstName, setFirstName] = useState('');
+	const [lastName, setLastName] = useState('');
+	const [email, setEmail] = useState('');
 
 	useEffect(() => {
 		const loadLists = async () => {
 			try {
 				const lists = await fetchMailingLists();
 
-				// ✅ Hardcoded sort order & descriptions tied to Piano mailing list `Id`
-				const metadata = {
-					11847: {
-						sortOrder: 1,
-						description: "Get the latest on who's funding what and why.",
-					},
-					11704: {
-						sortOrder: 2,
-						description:
-							'Topical news reports on philanthropy in arts & culture.',
-					},
-					11705: {
-						sortOrder: 3,
-						description: 'Topical news reports on philanthropy in education.',
-					},
-					11706: {
-						sortOrder: 4,
-						description:
-							'Topical news reports on philanthropy covering environmental issues.',
-					},
-					11707: {
-						sortOrder: 5,
-						description: 'Topical news reports on best practices in funding.',
-					},
-					11708: {
-						sortOrder: 6,
-						description:
-							'Topical news reports on philanthropy in health and science.',
-					},
-					11709: {
-						sortOrder: 7,
-						description:
-							'Topical news reports on philanthropy & social justice.',
-					},
-					11699: {
-						sortOrder: 8,
-						description: 'This is the weekly digest of Funding News & Tips.',
-					},
-					11865: {
-						sortOrder: 9,
-						description:
-							"David Callahan's weekly take on the political environment and philanthropy.",
-					},
-					11732: {
-						sortOrder: 10,
-						description:
-							"Our partners have great ideas! We hope you'll find it useful.",
-					},
-				};
-
-				// ✅ Inject metadata (sortOrder + description) into each list item
+				// Inject metadata from external file
 				const listsWithMetadata = lists.map((list) => ({
 					...list,
-					sortOrder: metadata[list.Id]?.sortOrder ?? 999, // Unknown = bottom
-					description: metadata[list.Id]?.description ?? '', // Fallback to empty string
+					sortOrder: mailingListMetadata[list.Id]?.sortOrder ?? 999,
+					description: mailingListMetadata[list.Id]?.description ?? '',
 				}));
 
-				// ✅ Sort by `sortOrder`
 				listsWithMetadata.sort((a, b) => a.sortOrder - b.sortOrder);
 
 				setMailingLists(listsWithMetadata);
 
-				// ✅ Initialize toggle state
 				const initialSelection = listsWithMetadata.reduce((acc, list) => {
-					acc[list.Id] = false; // Start unchecked
+					acc[list.Id] = false;
 					return acc;
 				}, {});
 				setSelectedLists(initialSelection);
@@ -95,7 +49,13 @@ function App() {
 	};
 
 	const handleSubmit = () => {
-		console.log('Preferences being submitted:', selectedLists);
+		console.log('Preferences being submitted:', {
+			firstName,
+			lastName,
+			email,
+			selectedLists,
+		});
+		// You can replace this with actual API call to save preferences
 	};
 
 	return (
@@ -105,6 +65,32 @@ function App() {
 					Manage Your Newsletter Preferences
 				</h1>
 
+				{/* Data Entry Fields */}
+				<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6'>
+					<input
+						type='text'
+						placeholder='First Name'
+						value={firstName}
+						onChange={(e) => setFirstName(e.target.value)}
+						className='border border-gray-300 p-2 w-full rounded-md'
+					/>
+					<input
+						type='text'
+						placeholder='Last Name'
+						value={lastName}
+						onChange={(e) => setLastName(e.target.value)}
+						className='border border-gray-300 p-2 w-full rounded-md'
+					/>
+				</div>
+				<input
+					type='email'
+					placeholder='Email Address'
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
+					className='border border-gray-300 p-2 w-full rounded-md mb-6'
+				/>
+				{/* End Data Entry Fields */}
+
 				<p className='text-gray-600 mb-6'>
 					Select which newsletters you’d like to receive. Uncheck to
 					unsubscribe. You can update your preferences at any time.
@@ -113,7 +99,7 @@ function App() {
 				<div className='space-y-4'>
 					{mailingLists.map((list) => (
 						<div
-							key={list.Id} // ✅ Piano's `Id` is the stable unique key
+							key={list.Id}
 							className='w-full bg-gray-50 rounded-lg shadow-sm p-4 flex items-center justify-between'
 						>
 							<div className='pr-4'>
@@ -125,8 +111,8 @@ function App() {
 								)}
 							</div>
 							<Toggle
-								checked={selectedLists[list.Id]} // ✅ Use `Id` for toggle state
-								onChange={() => toggleList(list.Id)} // ✅ Use `Id` for toggle handler
+								checked={selectedLists[list.Id]}
+								onChange={() => toggleList(list.Id)}
 							/>
 						</div>
 					))}
