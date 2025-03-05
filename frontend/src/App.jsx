@@ -2,23 +2,22 @@ import { useEffect, useState } from 'react';
 import Toggle from './Toggle.jsx';
 import { fetchMailingLists } from './clientApi.js';
 import mailingListMetadata from './mailingListMetadata.js';
-import EmailSubscribeForm from './EmailSubscribeForm.jsx'; 
+import NameEmailForm from './NameEmailForm.jsx';
 
 function App() {
 	const [mailingLists, setMailingLists] = useState([]);
 	const [selectedLists, setSelectedLists] = useState({});
 
-	// New fields for user details
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [email, setEmail] = useState('');
+	const [isKnownSubscriber, setIsKnownSubscriber] = useState(false);
 
 	useEffect(() => {
 		const loadLists = async () => {
 			try {
 				const lists = await fetchMailingLists();
 
-				// Inject metadata from external file
 				const listsWithMetadata = lists.map((list) => ({
 					...list,
 					sortOrder: mailingListMetadata[list.Id]?.sortOrder ?? 999,
@@ -34,6 +33,15 @@ function App() {
 					return acc;
 				}, {});
 				setSelectedLists(initialSelection);
+
+				// Detect known subscriber (from URL parameter)
+				const urlParams = new URLSearchParams(window.location.search);
+				const presetEmail = urlParams.get('email');
+
+				if (presetEmail) {
+					setEmail(presetEmail);
+					setIsKnownSubscriber(true);
+				}
 			} catch (error) {
 				console.error('Error fetching mailing lists:', error);
 			}
@@ -49,15 +57,48 @@ function App() {
 		}));
 	};
 
-	const handleSubmit = () => {
-		console.log('Preferences being submitted:', {
-			firstName,
-			lastName,
-			email,
-			selectedLists,
+const handleSubmit = async () => {
+	try {
+		const selectedMailingListIds = Object.entries(selectedLists)
+			.filter(([_, isChecked]) => isChecked)
+			.map(([id]) => parseInt(id, 10)); // convert to numbers if needed
+
+		// Step 1: Subscribe to lists
+		const subscribeResponse = await fetch('/api/subscriber/subscribe', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ email, mailingListIds: selectedMailingListIds }),
 		});
-		// You can replace this with actual API call to save preferences
-	};
+
+		if (!subscribeResponse.ok) {
+			throw new Error('Failed to subscribe to lists');
+		}
+
+		// Step 2: Update merge fields if names are provided
+		if (firstName || lastName) {
+			const mergeResponse = await fetch('/api/subscriber/mergefields', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email,
+					mergeFields: {
+						NAME_FIRST: firstName,
+						NAME_LAST: lastName,
+					},
+				}),
+			});
+
+			if (!mergeResponse.ok) {
+				throw new Error('Failed to update name fields');
+			}
+		}
+
+		alert('Preferences saved successfully!');
+	} catch (error) {
+		console.error('Error saving preferences:', error);
+		alert('Failed to save preferences. Please try again.');
+	}
+};
 
 	return (
 		<div className='min-h-screen bg-white text-gray-800 w-full flex justify-center'>
@@ -66,12 +107,19 @@ function App() {
 					Manage Your Newsletter Preferences
 				</h1>
 
-				{/* New Email Subscribe Form */}
-				<EmailSubscribeForm />
+				{/* New NameEmailForm with real data */}
+				<NameEmailForm
+					email={email}
+					setEmail={setEmail}
+					firstName={firstName}
+					setFirstName={setFirstName}
+					lastName={lastName}
+					setLastName={setLastName}
+					isKnownSubscriber={isKnownSubscriber}
+				/>
 
 				<p className='text-gray-600 mb-6'>
-					Select which newsletters you’d like to receive. Uncheck to
-					unsubscribe. You can update your preferences at any time.
+					Select which newsletters you’d like to receive. Funding News & Tips is our flagship newsletter. We also offer topical newsletters, a weekly roundup and Saturday Toplines. Update your preferences anytime. 
 				</p>
 
 				<div className='space-y-4'>

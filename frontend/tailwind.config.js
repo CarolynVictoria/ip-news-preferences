@@ -5,6 +5,11 @@ export default {
 		extend: {
 			colors: {
 				brand: '#4173a2', // This adds 'brand' to your Tailwind color palette
+				active: {
+					DEFAULT: '#10b981', // This is 'active'
+					light: '#6ee7b7', // This would be 'active-light'
+					dark: '#047857', // This would be 'active-dark'
+				},
 			},
 		},
 	},
