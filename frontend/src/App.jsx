@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Toggle from './Toggle.jsx';
 import { fetchMailingLists } from './clientApi.js';
 import mailingListMetadata from './mailingListMetadata.js';
+import EmailSubscribeForm from './EmailSubscribeForm.jsx'; 
 
 function App() {
 	const [mailingLists, setMailingLists] = useState([]);
@@ -65,31 +66,8 @@ function App() {
 					Manage Your Newsletter Preferences
 				</h1>
 
-				{/* Data Entry Fields */}
-				<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6'>
-					<input
-						type='text'
-						placeholder='First Name'
-						value={firstName}
-						onChange={(e) => setFirstName(e.target.value)}
-						className='border border-gray-300 p-2 w-full rounded-md'
-					/>
-					<input
-						type='text'
-						placeholder='Last Name'
-						value={lastName}
-						onChange={(e) => setLastName(e.target.value)}
-						className='border border-gray-300 p-2 w-full rounded-md'
-					/>
-				</div>
-				<input
-					type='email'
-					placeholder='Email Address'
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-					className='border border-gray-300 p-2 w-full rounded-md mb-6'
-				/>
-				{/* End Data Entry Fields */}
+				{/* New Email Subscribe Form */}
+				<EmailSubscribeForm />
 
 				<p className='text-gray-600 mb-6'>
 					Select which newsletters you’d like to receive. Uncheck to
