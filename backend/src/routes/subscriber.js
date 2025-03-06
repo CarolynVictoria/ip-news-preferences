@@ -1,29 +1,29 @@
 // /backend/src/routes/subscriber.js
-
 import express from 'express';
 import {
-	addSubscriberToLists,
-	updateSubscriberMergeFields,
+	addSubscriberToLists
 } from '../apiService.js';
 
 const router = express.Router();
 
 // Subscribe user to mailing lists
 router.post('/subscribe', async (req, res) => {
-	const { email, mailingListIds } = req.body;
-
-	if (!email || !Array.isArray(mailingListIds)) {
-		return res
-			.status(400)
-			.json({ error: 'Email and mailingListIds are required.' });
-	}
-
 	try {
-		const result = await addSubscriberToLists(email, mailingListIds);
-		res.json({ message: result });
+		const { email, mailingListIds, mergeFields } = req.body;
+
+		// Pass both lists and mergeFields directly to addSubscriberToLists
+		const result = await addSubscriberToLists(
+			email,
+			mailingListIds,
+			mergeFields
+		);
+
+		res.json(result);
 	} catch (error) {
 		console.error('Error in /subscribe:', error.message);
-		res.status(500).json({ error: 'Failed to subscribe user.' });
+		res
+			.status(500)
+			.json({ error: 'Failed to subscribe and update merge fields' });
 	}
 });
 

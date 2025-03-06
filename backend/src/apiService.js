@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const API_URL = 'https://api-esp.piano.io/publisher/pub/1048/sq';
-const PIANO_ESP_API_BASE_URL = 'https://api-esp.piano.io'; // This can stay as a constant if you want
+const PIANO_ESP_API_BASE_URL = 'https://api-esp.piano.io';
 
-export async function fetchFilteredMailingLists() {
-	const PIANO_ESP_API_KEY = process.env.PIANO_ESP_API_KEY; // ✅ Read dynamically
+async function fetchFilteredMailingLists() {
+	const PIANO_ESP_API_KEY = process.env.PIANO_ESP_API_KEY;
 	console.log('fetchFilteredMailingLists - Using API Key:', PIANO_ESP_API_KEY);
 
 	const response = await axios.get(`${API_URL}?api_key=${PIANO_ESP_API_KEY}`);
@@ -15,34 +15,35 @@ export async function fetchFilteredMailingLists() {
 	);
 }
 
-export async function addSubscriberToLists(email, mailingListIds) {
-	const PIANO_ESP_API_KEY = process.env.PIANO_ESP_API_KEY; // ✅ Read dynamically
+/**
+ * Combines subscribing to lists and setting merge fields into a single request.
+ * This is the correct method per Piano ESP 2.0 documentation.
+ */
+async function addSubscriberToLists(email, mailingListIds, mergeFields) {
+	const PIANO_ESP_API_KEY = process.env.PIANO_ESP_API_KEY;
+
 	const url = `${PIANO_ESP_API_BASE_URL}/tracker/securesub?api_key=${PIANO_ESP_API_KEY}`;
 
+	// Combine lists and merge fields into one payload
 	const payload = {
 		email,
 		mlids: mailingListIds,
+		mergeField: {
+			NAME_FIRST: mergeFields?.NAME_FIRST || '',
+			NAME_LAST: mergeFields?.NAME_LAST || '',
+		},
 	};
+
+	console.log('addSubscriberToLists - Payload:', payload);
 
 	const response = await axios.post(url, payload, {
 		headers: { 'Content-Type': 'application/json' },
 	});
 
-	return response.data; // This is the "subscribed to: ..." string
+	console.log('addSubscriberToLists - Response:', response.data);
+	return response.data;
 }
 
-export const updateSubscriberMergeFields = async (email, mergeFields) => {
-	const PIANO_ESP_API_KEY = process.env.PIANO_ESP_API_KEY; // ✅ Read dynamically
-	const url = `${PIANO_ESP_API_BASE_URL}/tracker/securesub/mergefields?api_key=${PIANO_ESP_API_KEY}`;
+// Note: The updateSubscriberMergeFields function is removed completely, because it's unnecessary.
 
-	const payload = {
-		email,
-		merge_fields: mergeFields,
-	};
-
-	const response = await axios.post(url, payload, {
-		headers: { 'Content-Type': 'application/json' },
-	});
-
-	return response.data;
-};
+export { fetchFilteredMailingLists, addSubscriberToLists };

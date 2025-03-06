@@ -57,48 +57,51 @@ function App() {
 		}));
 	};
 
-const handleSubmit = async () => {
-	try {
-		const selectedMailingListIds = Object.entries(selectedLists)
-			.filter(([_, isChecked]) => isChecked)
-			.map(([id]) => parseInt(id, 10)); // convert to numbers if needed
+	const handleSubmit = async () => {
+		try {
+			const selectedMailingListIds = Object.entries(selectedLists)
+				.filter(([_, isChecked]) => isChecked)
+				.map(([id]) => parseInt(id, 10));
 
-		// Step 1: Subscribe to lists
-		const subscribeResponse = await fetch('/api/subscriber/subscribe', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ email, mailingListIds: selectedMailingListIds }),
-		});
-
-		if (!subscribeResponse.ok) {
-			throw new Error('Failed to subscribe to lists');
-		}
-
-		// Step 2: Update merge fields if names are provided
-		if (firstName || lastName) {
-			const mergeResponse = await fetch('/api/subscriber/mergefields', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					email,
-					mergeFields: {
-						NAME_FIRST: firstName,
-						NAME_LAST: lastName,
-					},
-				}),
+			console.log('Submitting preferences for:', {
+				email,
+				selectedMailingListIds,
+				firstName,
+				lastName,
 			});
 
-			if (!mergeResponse.ok) {
-				throw new Error('Failed to update name fields');
-			}
-		}
+			// Single call to /subscribe — including both lists and merge fields
+			const payload = {
+				email,
+				mailingListIds: selectedMailingListIds,
+				mergeFields: {
+					NAME_FIRST: firstName,
+					NAME_LAST: lastName,
+				},
+			};
 
-		alert('Preferences saved successfully!');
-	} catch (error) {
-		console.error('Error saving preferences:', error);
-		alert('Failed to save preferences. Please try again.');
-	}
-};
+			console.log('Sending to /subscribe:', payload);
+
+			const response = await fetch('/api/subscriber/subscribe', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('Subscribe response error:', errorText);
+				throw new Error('Failed to save preferences');
+			}
+
+			console.log('Successfully saved preferences.');
+
+			alert('Preferences saved successfully!');
+		} catch (error) {
+			console.error('Error saving preferences:', error);
+			alert('Failed to save preferences. Please try again.');
+		}
+	};
 
 	return (
 		<div className='min-h-screen bg-white text-gray-800 w-full flex justify-center'>
@@ -107,7 +110,6 @@ const handleSubmit = async () => {
 					Manage Your Newsletter Preferences
 				</h1>
 
-				{/* New NameEmailForm with real data */}
 				<NameEmailForm
 					email={email}
 					setEmail={setEmail}
@@ -119,7 +121,9 @@ const handleSubmit = async () => {
 				/>
 
 				<p className='text-gray-600 mb-6'>
-					Select which newsletters you’d like to receive. Funding News & Tips is our flagship newsletter. We also offer topical newsletters, a weekly roundup and Saturday Toplines. Update your preferences anytime. 
+					Select which newsletters you’d like to receive. Funding News & Tips is
+					our flagship newsletter. We also offer topical newsletters, a weekly
+					roundup and Saturday Toplines. Update your preferences anytime.
 				</p>
 
 				<div className='space-y-4'>
