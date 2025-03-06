@@ -71,14 +71,13 @@ function App() {
 			});
 
 			// Single call to /subscribe — including both lists and merge fields
-			const payload = {
-				email,
-				mailingListIds: selectedMailingListIds,
-				mergeFields: {
-					NAME_FIRST: firstName,
-					NAME_LAST: lastName,
-				},
-			};
+const payload = {
+	email,
+	mailingListIds: selectedMailingListIds,
+	firstName,
+	lastName,
+};
+
 
 			console.log('Sending to /subscribe:', payload);
 

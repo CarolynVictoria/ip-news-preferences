@@ -1,24 +1,44 @@
 // /backend/src/routes/subscriber.js
 import express from 'express';
 import {
-	addSubscriberToLists
+	addSubscriberToLists,
+	updateSubscriberMergeFields,
 } from '../apiService.js';
 
 const router = express.Router();
 
-// Subscribe user to mailing lists
+// Subscribe user to mailing lists and update merge fields (first name, last name)
 router.post('/subscribe', async (req, res) => {
 	try {
-		const { email, mailingListIds, mergeFields } = req.body;
+		const { email, mailingListIds, firstName, lastName } = req.body;
 
-		// Pass both lists and mergeFields directly to addSubscriberToLists
-		const result = await addSubscriberToLists(
-			email,
-			mailingListIds,
-			mergeFields
-		);
+		if (
+			!email ||
+			!Array.isArray(mailingListIds) ||
+			mailingListIds.length === 0
+		) {
+			return res
+				.status(400)
+				.json({
+					error: 'Email and at least one mailing list ID are required.',
+				});
+		}
 
-		res.json(result);
+		// Step 1: Subscribe to mailing lists
+		const listResult = await addSubscriberToLists(email, mailingListIds);
+
+		// Step 2: Update merge fields (first name, last name)
+		const mergeFields = {
+			NAME_FIRST: firstName,
+			NAME_LAST: lastName,
+		};
+		const mergeResult = await updateSubscriberMergeFields(email, mergeFields);
+
+		res.json({
+			success: true,
+			listResult,
+			mergeResult,
+		});
 	} catch (error) {
 		console.error('Error in /subscribe:', error.message);
 		res
@@ -27,7 +47,8 @@ router.post('/subscribe', async (req, res) => {
 	}
 });
 
-// Update merge fields (first name, last name)
+// Update merge fields only (first name, last name)
+// This is kept if you want the ability to update merge fields independently later.
 router.post('/mergefields', async (req, res) => {
 	const { email, mergeFields } = req.body;
 
