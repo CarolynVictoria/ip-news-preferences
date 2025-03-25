@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useUserSession } from './UserSessionProvider.jsx';
 import Toggle from './Toggle.jsx';
 import { fetchMailingLists } from './clientApi.js';
 import mailingListMetadata from './mailingListMetadata.js';
@@ -13,6 +14,8 @@ function App() {
 	const [email, setEmail] = useState('');
 	const [isKnownSubscriber, setIsKnownSubscriber] = useState(false);
 
+	const { userSession } = useUserSession();
+
 	useEffect(() => {
 		const loadLists = async () => {
 			try {
@@ -25,7 +28,6 @@ function App() {
 				}));
 
 				listsWithMetadata.sort((a, b) => a.sortOrder - b.sortOrder);
-
 				setMailingLists(listsWithMetadata);
 
 				const initialSelection = listsWithMetadata.reduce((acc, list) => {
@@ -34,13 +36,16 @@ function App() {
 				}, {});
 				setSelectedLists(initialSelection);
 
-				// Detect known subscriber (from URL parameter)
+				// Detect known subscriber (from URL parameter) OR from logged-in session
 				const urlParams = new URLSearchParams(window.location.search);
 				const presetEmail = urlParams.get('email');
 
 				if (presetEmail) {
 					setEmail(presetEmail);
 					setIsKnownSubscriber(true);
+				} else if (userSession?.email) {
+					setEmail(userSession.email);
+					setIsKnownSubscriber(true); // Treat logged-in user as "known subscriber"
 				}
 			} catch (error) {
 				console.error('Error fetching mailing lists:', error);
@@ -48,7 +53,7 @@ function App() {
 		};
 
 		loadLists();
-	}, []);
+	}, [userSession]);
 
 	const toggleList = (id) => {
 		setSelectedLists((prev) => ({
@@ -71,13 +76,12 @@ function App() {
 			});
 
 			// Single call to /subscribe — including both lists and merge fields
-const payload = {
-	email,
-	mailingListIds: selectedMailingListIds,
-	firstName,
-	lastName,
-};
-
+			const payload = {
+				email,
+				mailingListIds: selectedMailingListIds,
+				firstName,
+				lastName,
+			};
 
 			console.log('Sending to /subscribe:', payload);
 
@@ -122,7 +126,8 @@ const payload = {
 				<p className='text-gray-600 mb-6'>
 					Select which newsletters you’d like to receive. Funding News & Tips is
 					our flagship newsletter. We also offer topical newsletters, a weekly
-					roundup and Saturday Toplines. Update your preferences anytime.
+					roundup on Fridays and Saturday Toplines by David Callahan. Update
+					your preferences anytime.
 				</p>
 
 				<div className='space-y-4'>
